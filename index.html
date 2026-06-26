@@ -146,22 +146,29 @@
       grid-template-columns: repeat(24, 1fr);
       gap: 2px;
       align-items: stretch;
-      padding-bottom: 58px;
       position: relative;
     }
 
     .bar-wrap {
       min-width: 0;
+      display: grid;
+      grid-template-rows: 1fr 66px;
+      gap: 4px;
+      overflow: hidden;
+    }
+
+    .bar-area {
+      min-height: 0;
       display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
-      align-items: stretch;
+      align-items: flex-end;
+      justify-content: center;
       position: relative;
       overflow: visible;
     }
 
     .bar {
-      min-height: 5px;
+      width: 100%;
+      min-height: 2px;
       border-radius: 5px 5px 0 0;
       background: var(--blue);
       position: relative;
@@ -172,38 +179,37 @@
 
     .bar.now {
       background: var(--yellow);
-      box-shadow:
-        0 0 0 2px white inset,
-        0 0 14px rgba(250, 204, 21, .95);
+      box-shadow: 0 0 14px rgba(250, 204, 21, .95);
       z-index: 2;
     }
 
     .bar.now::before {
       content: "";
       position: absolute;
-      top: -7px;
+      top: -9px;
       left: 50%;
       transform: translateX(-50%);
-      width: 7px;
-      height: 7px;
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
       background: white;
-      box-shadow: 0 0 8px white;
+      box-shadow: 0 0 9px white;
     }
 
     .bar-label {
-      position: absolute;
-      left: 50%;
-      bottom: 0;
-      transform: translate(-50%, 100%) rotate(-90deg);
-      transform-origin: top left;
-      color: var(--muted);
-      font-size: clamp(.48rem, 1.65vw, .66rem);
+      height: 66px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: clamp(.48rem, 1.55vw, .64rem);
       font-weight: 750;
       line-height: 1;
       white-space: nowrap;
       user-select: none;
-      padding-top: 7px;
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      text-shadow: 0 1px 2px rgba(0,0,0,.45);
     }
 
     .empty {
@@ -227,8 +233,9 @@
       .modebox { min-width: 96px; min-height: 56px; }
       .value { font-size: 1.02rem; }
       .label { font-size: .68rem; }
-      #chart { padding-bottom: 54px; gap: 1px; }
-      .bar-label { font-size: .48rem; }
+      #chart { gap: 1px; }
+      .bar-wrap { grid-template-rows: 1fr 62px; gap: 3px; }
+      .bar-label { height: 62px; font-size: .48rem; }
     }
 
     @media (max-height: 680px) {
@@ -238,7 +245,8 @@
       .value { font-size: 1.02rem; }
       #status { display: none; }
       .card { padding: 7px; }
-      #chart { padding-bottom: 50px; }
+      .bar-wrap { grid-template-rows: 1fr 54px; gap: 2px; }
+      .bar-label { height: 54px; }
     }
   </style>
 </head>
@@ -275,31 +283,18 @@
   <script>
     const API = "https://api.energyzero.nl/v1/energyprices";
 
-    /*
-      Kosteninstellingen
-
-      API-prijs:
-      - EnergyZero-prijs wordt opgehaald inclusief btw.
-      - Daarom tellen we alleen extra bedragen op die nog niet in de kale dynamische prijs zitten.
-
-      2026:
-      - Energiebelasting elektriciteit incl. btw: €0,11085/kWh.
-      - ODE is afgeschaft/verwerkt in energiebelasting.
-      - Netbeheerkosten zijn doorgaans vaste periodieke kosten, niet variabel per kWh.
-    */
     const BTW = 0.21;
+    const CHART_MAX = 1.00;
 
     const COSTS = {
       energyTaxInclVat: 0.11085,
-
       supplierMarkupUseExVat: 0.04073,
       supplierDeductionReturnExVat: 0.0453,
-
       variableGridCostInclVat: 0
     };
 
     let showingTomorrow = false;
-    let mode = "use"; // use = afnemen, return = terugleveren
+    let mode = "use";
 
     const els = {
       title: document.querySelector("#title"),
@@ -412,7 +407,6 @@
       }
 
       const deductionInclVat = COSTS.supplierDeductionReturnExVat * (1 + BTW);
-
       return baseInclVat - deductionInclVat;
     }
 
@@ -436,9 +430,9 @@
 
     function render(prices) {
       const values = prices.map(item => item.price);
+      const avg = values.reduce((sum, value) => sum + value, 0) / values.length;
       const min = Math.min(...values);
       const max = Math.max(...values);
-      const avg = values.reduce((sum, value) => sum + value, 0) / values.length;
 
       const now = new Date();
 
@@ -462,19 +456,26 @@
         byHour.set(item.time.getHours(), item);
       });
 
-      const range = Math.max(max - min, 0.0001);
-
       for (let hour = 0; hour < 24; hour++) {
         const item = byHour.get(hour);
 
         const wrap = document.createElement("div");
         wrap.className = "bar-wrap";
 
+        const barArea = document.createElement("div");
+        barArea.className = "bar-area";
+
+        const label = document.createElement("div");
+        label.className = "bar-label";
+
         if (!item) {
           const emptyBar = document.createElement("div");
           emptyBar.className = "bar";
-          emptyBar.style.height = "5px";
-          wrap.appendChild(emptyBar);
+          emptyBar.style.height = "2px";
+          label.textContent = String(hour).padStart(2, "0") + " -";
+          barArea.appendChild(emptyBar);
+          wrap.appendChild(barArea);
+          wrap.appendChild(label);
           els.chart.appendChild(wrap);
           continue;
         }
@@ -486,15 +487,16 @@
         if (item.price === max) bar.classList.add("expensive");
         if (current && item.time.getTime() === current.time.getTime()) bar.classList.add("now");
 
-        const height = 9 + ((item.price - min) / range) * 91;
+        const clampedPrice = Math.max(0, Math.min(item.price, CHART_MAX));
+        const height = Math.max(2, (clampedPrice / CHART_MAX) * 100);
+
         bar.style.height = height + "%";
         bar.title = hourNumber(item.time) + " - " + euro(item.price);
 
-        const label = document.createElement("div");
-        label.className = "bar-label";
         label.textContent = hourNumber(item.time) + " - " + euro(item.price);
 
-        wrap.appendChild(bar);
+        barArea.appendChild(bar);
+        wrap.appendChild(barArea);
         wrap.appendChild(label);
         els.chart.appendChild(wrap);
       }
