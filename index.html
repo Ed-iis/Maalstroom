@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>stroomprijzen</title>
+  <title>uurprijzen vandaag</title>
 
   <style>
     :root {
@@ -23,49 +23,40 @@
       box-sizing: border-box;
     }
 
-    body {
+    html, body {
       margin: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      min-height: 100%;
       background: var(--bg);
       color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      overflow: hidden;
     }
 
     main {
+      height: 100dvh;
       max-width: 900px;
       margin: 0 auto;
-      padding: 18px;
-      padding-bottom: 40px;
-    }
-
-    h1 {
-      margin: 0 0 14px;
-      font-size: 1.35rem;
-      font-weight: 600;
-      letter-spacing: .2px;
-      text-transform: lowercase;
-    }
-
-    h2 {
-      margin: 0 0 12px;
-      font-size: 1rem;
-      font-weight: 600;
-    }
-
-    .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 16px;
-      margin: 14px 0;
-      box-shadow: 0 8px 22px rgba(0,0,0,.15);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
 
     .topbar {
       display: flex;
-      gap: 10px;
       align-items: center;
       justify-content: space-between;
-      flex-wrap: wrap;
+      gap: 10px;
+      flex: 0 0 auto;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.15rem;
+      line-height: 1.1;
+      font-weight: 700;
+      letter-spacing: .2px;
+      text-transform: lowercase;
     }
 
     button {
@@ -73,92 +64,93 @@
       border-radius: 12px;
       background: var(--button);
       color: white;
-      padding: 11px 15px;
-      font-size: 1rem;
+      padding: 9px 12px;
+      font-size: .95rem;
       cursor: pointer;
-      font-weight: 600;
+      font-weight: 700;
+      white-space: nowrap;
     }
 
     button:active {
       transform: translateY(1px);
     }
 
-    .muted {
-      color: var(--muted);
-      font-size: .9rem;
-      line-height: 1.4;
-    }
-
-    .status {
-      margin: 10px 0 0;
-    }
-
     .stats {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: 1fr 1fr;
       gap: 10px;
-    }
-
-    @media (min-width: 700px) {
-      .stats {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-      }
+      flex: 0 0 auto;
     }
 
     .stat {
       background: var(--card2);
-      border: 1px solid rgba(255,255,255,.04);
+      border: 1px solid var(--border);
       border-radius: 16px;
-      padding: 13px;
-      min-height: 82px;
+      padding: 10px 12px;
+      min-height: 66px;
     }
 
     .label {
       color: var(--muted);
-      font-size: .82rem;
-      margin-bottom: 6px;
+      font-size: .78rem;
+      margin-bottom: 4px;
     }
 
     .value {
-      font-size: 1.22rem;
-      font-weight: 750;
-      word-break: break-word;
+      font-size: 1.35rem;
+      font-weight: 800;
+      line-height: 1.15;
     }
 
-    .chart-wrap {
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      padding-bottom: 4px;
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 10px;
+      box-shadow: 0 8px 22px rgba(0,0,0,.15);
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #status {
+      color: var(--muted);
+      font-size: .82rem;
+      line-height: 1.25;
+      min-height: 18px;
+      margin: 0 0 6px;
+      flex: 0 0 auto;
     }
 
     #chart {
-      height: 300px;
-      min-width: 650px;
-      display: flex;
-      align-items: end;
-      gap: 5px;
-      padding-top: 18px;
-      padding-bottom: 28px;
-      position: relative;
+      flex: 1 1 auto;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: repeat(24, 1fr);
+      gap: 2px;
+      align-items: stretch;
     }
 
     .bar-wrap {
-      flex: 1;
-      min-width: 22px;
-      height: 100%;
+      min-width: 0;
       display: flex;
       flex-direction: column;
       justify-content: flex-end;
-      align-items: center;
+      align-items: stretch;
       position: relative;
+      overflow: hidden;
     }
 
     .bar {
-      width: 100%;
-      min-height: 4px;
-      border-radius: 7px 7px 0 0;
+      min-height: 5px;
+      border-radius: 5px 5px 0 0;
       background: var(--blue);
       position: relative;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      overflow: hidden;
     }
 
     .bar.cheap {
@@ -171,88 +163,83 @@
 
     .bar.now {
       outline: 2px solid white;
-      outline-offset: 2px;
+      outline-offset: -2px;
     }
 
-    .hour {
-      position: absolute;
-      bottom: -24px;
-      font-size: .72rem;
-      color: var(--muted);
-      transform: rotate(-45deg);
-      transform-origin: center;
+    .bar-label {
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      color: rgba(255,255,255,.92);
+      font-size: clamp(.48rem, 1.65vw, .68rem);
+      font-weight: 750;
+      line-height: 1;
+      padding: 5px 0;
       white-space: nowrap;
+      text-shadow: 0 1px 2px rgba(0,0,0,.45);
+      user-select: none;
     }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
+    .empty {
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      height: 100%;
+      padding: 16px;
       font-size: .95rem;
     }
 
-    th, td {
-      padding: 9px 6px;
-      border-bottom: 1px solid var(--border);
-      text-align: right;
-    }
+    @media (max-height: 680px) {
+      main {
+        padding: 9px;
+        gap: 8px;
+      }
 
-    th:first-child,
-    td:first-child {
-      text-align: left;
-    }
+      h1 {
+        font-size: 1.02rem;
+      }
 
-    th {
-      color: var(--muted);
-      font-weight: 600;
-    }
+      button {
+        padding: 8px 10px;
+        font-size: .86rem;
+      }
 
-    .cheap-row td {
-      color: var(--green);
-      font-weight: 700;
-    }
+      .stat {
+        min-height: 58px;
+        padding: 8px 10px;
+      }
 
-    .expensive-row td {
-      color: #f87171;
-      font-weight: 700;
-    }
+      .value {
+        font-size: 1.18rem;
+      }
 
-    .now-row td {
-      background: rgba(255,255,255,.07);
+      .label {
+        font-size: .72rem;
+      }
+
+      .card {
+        padding: 8px;
+      }
+
+      #status {
+        display: none;
+      }
     }
   </style>
 </head>
 
 <body>
   <main>
-    <h1>stroomprijzen</h1>
-
-    <section class="card">
-      <div class="topbar">
-        <div>
-          <div id="dayTitle" class="value">Vandaag</div>
-          <div class="muted">Uurprijzen per kWh, inclusief btw</div>
-        </div>
-
-        <button id="switchDay">Morgen bekijken</button>
-      </div>
-
-      <p id="status" class="muted status">Prijzen laden...</p>
-    </section>
+    <header class="topbar">
+      <h1 id="title">uurprijzen vandaag</h1>
+      <button id="switchDay">morgen</button>
+    </header>
 
     <section class="stats">
       <div class="stat">
         <div class="label">Nu</div>
         <div id="now" class="value">–</div>
-      </div>
-
-      <div class="stat">
-        <div class="label">Goedkoopste</div>
-        <div id="min" class="value">–</div>
-      </div>
-
-      <div class="stat">
-        <div class="label">Duurste</div>
-        <div id="max" class="value">–</div>
       </div>
 
       <div class="stat">
@@ -262,23 +249,8 @@
     </section>
 
     <section class="card">
-      <h2>Grafiek</h2>
-      <div class="chart-wrap">
-        <div id="chart"></div>
-      </div>
-    </section>
-
-    <section class="card">
-      <h2>Tabel</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Tijd</th>
-            <th>Prijs</th>
-          </tr>
-        </thead>
-        <tbody id="tbody"></tbody>
-      </table>
+      <p id="status">Laden...</p>
+      <div id="chart"></div>
     </section>
   </main>
 
@@ -288,15 +260,12 @@
     let showingTomorrow = false;
 
     const els = {
+      title: document.querySelector("#title"),
       switchDay: document.querySelector("#switchDay"),
-      dayTitle: document.querySelector("#dayTitle"),
       status: document.querySelector("#status"),
       now: document.querySelector("#now"),
-      min: document.querySelector("#min"),
-      max: document.querySelector("#max"),
       avg: document.querySelector("#avg"),
-      chart: document.querySelector("#chart"),
-      tbody: document.querySelector("#tbody")
+      chart: document.querySelector("#chart")
     };
 
     els.switchDay.addEventListener("click", () => {
@@ -307,17 +276,9 @@
     loadPrices();
 
     function selectedDate() {
-      const d = new Date();
-      if (showingTomorrow) d.setDate(d.getDate() + 1);
-      return d;
-    }
-
-    function dateLabel(date) {
-      return date.toLocaleDateString("nl-NL", {
-        weekday: "long",
-        day: "numeric",
-        month: "long"
-      });
+      const date = new Date();
+      if (showingTomorrow) date.setDate(date.getDate() + 1);
+      return date;
     }
 
     function dayRange(date) {
@@ -337,10 +298,12 @@
       resetScreen();
 
       const date = selectedDate();
+      const dayText = showingTomorrow ? "morgen" : "vandaag";
 
-      els.switchDay.textContent = showingTomorrow ? "Vandaag bekijken" : "Morgen bekijken";
-      els.dayTitle.textContent = showingTomorrow ? "Morgen" : "Vandaag";
-      els.status.textContent = "Uurprijzen laden voor " + dateLabel(date) + "...";
+      document.title = "uurprijzen " + dayText;
+      els.title.textContent = "uurprijzen " + dayText;
+      els.switchDay.textContent = showingTomorrow ? "vandaag" : "morgen";
+      els.status.textContent = "Laden...";
 
       try {
         const range = dayRange(date);
@@ -356,7 +319,7 @@
         const response = await fetch(API + "?" + params.toString());
 
         if (!response.ok) {
-          throw new Error("De prijzen konden niet worden opgehaald.");
+          throw new Error("Prijzen konden niet worden opgehaald.");
         }
 
         const data = await response.json();
@@ -371,46 +334,36 @@
           .sort((a, b) => a.time - b.time);
 
         if (!prices.length) {
-          throw new Error("Nog geen prijzen beschikbaar voor deze dag.");
+          throw new Error("Nog geen prijzen beschikbaar.");
         }
 
         render(prices);
-
-        els.status.textContent = "Uurprijzen voor " + dateLabel(date);
+        els.status.textContent = "";
       } catch (error) {
         els.status.textContent = error.message;
+        els.chart.innerHTML = '<div class="empty">' + error.message + '</div>';
       }
     }
 
     function resetScreen() {
       els.now.textContent = "–";
-      els.min.textContent = "–";
-      els.max.textContent = "–";
       els.avg.textContent = "–";
       els.chart.innerHTML = "";
-      els.tbody.innerHTML = "";
     }
 
     function euro(value) {
-      return "€ " + value.toFixed(4);
+      return "€" + value.toFixed(2);
     }
 
-    function time(date) {
+    function hourNumber(date) {
       return date.toLocaleTimeString("nl-NL", {
         hour: "2-digit",
-        minute: "2-digit"
-      });
-    }
-
-    function hourOnly(date) {
-      return date.toLocaleTimeString("nl-NL", {
-        hour: "2-digit"
+        hour12: false
       });
     }
 
     function render(prices) {
       const values = prices.map(item => item.price);
-
       const min = Math.min(...values);
       const max = Math.max(...values);
       const avg = values.reduce((sum, value) => sum + value, 0) / values.length;
@@ -423,20 +376,34 @@
       });
 
       els.now.textContent = current ? euro(current.price) : "–";
-      els.min.textContent = euro(min);
-      els.max.textContent = euro(max);
       els.avg.textContent = euro(avg);
 
       renderChart(prices, min, max, current);
-      renderTable(prices, min, max, current);
     }
 
     function renderChart(prices, min, max, current) {
       els.chart.innerHTML = "";
 
+      const byHour = new Map();
+
       prices.forEach(item => {
+        byHour.set(item.time.getHours(), item);
+      });
+
+      for (let hour = 0; hour < 24; hour++) {
+        const item = byHour.get(hour);
+
         const wrap = document.createElement("div");
         wrap.className = "bar-wrap";
+
+        if (!item) {
+          const emptyBar = document.createElement("div");
+          emptyBar.className = "bar";
+          emptyBar.style.height = "5px";
+          wrap.appendChild(emptyBar);
+          els.chart.appendChild(wrap);
+          continue;
+        }
 
         const bar = document.createElement("div");
         bar.className = "bar";
@@ -445,41 +412,18 @@
         if (item.price === max) bar.classList.add("expensive");
         if (current && item.time.getTime() === current.time.getTime()) bar.classList.add("now");
 
-        const height = 18 + ((item.price - min) / Math.max(max - min, 0.0001)) * 250;
-        bar.style.height = height + "px";
-        bar.title = time(item.time) + " · " + euro(item.price) + " / kWh";
+        const height = 12 + ((item.price - min) / Math.max(max - min, 0.0001)) * 88;
+        bar.style.height = height + "%";
+        bar.title = hourNumber(item.time) + " - " + euro(item.price);
 
-        const hour = document.createElement("div");
-        hour.className = "hour";
-        hour.textContent = hourOnly(item.time);
+        const label = document.createElement("div");
+        label.className = "bar-label";
+        label.textContent = hourNumber(item.time) + " - " + euro(item.price);
 
+        bar.appendChild(label);
         wrap.appendChild(bar);
-        wrap.appendChild(hour);
         els.chart.appendChild(wrap);
-      });
-    }
-
-    function renderTable(prices, min, max, current) {
-      els.tbody.innerHTML = "";
-
-      prices.forEach(item => {
-        const row = document.createElement("tr");
-
-        if (item.price === min) row.classList.add("cheap-row");
-        if (item.price === max) row.classList.add("expensive-row");
-        if (current && item.time.getTime() === current.time.getTime()) row.classList.add("now-row");
-
-        const timeCell = document.createElement("td");
-        timeCell.textContent = time(item.time);
-
-        const priceCell = document.createElement("td");
-        priceCell.textContent = euro(item.price) + " / kWh";
-
-        row.appendChild(timeCell);
-        row.appendChild(priceCell);
-
-        els.tbody.appendChild(row);
-      });
+      }
     }
   </script>
 </body>
