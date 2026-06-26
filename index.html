@@ -16,12 +16,11 @@
       --blue: #38bdf8;
       --green: #22c55e;
       --red: #ef4444;
+      --yellow: #facc15;
       --button: #2563eb;
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     html, body {
       margin: 0;
@@ -36,27 +35,28 @@
       height: 100dvh;
       max-width: 900px;
       margin: 0 auto;
-      padding: 12px;
+      padding: 11px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 9px;
     }
 
     .topbar {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 10px;
+      gap: 8px;
       flex: 0 0 auto;
     }
 
     h1 {
       margin: 0;
-      font-size: 1.15rem;
+      font-size: 1.08rem;
       line-height: 1.1;
-      font-weight: 700;
+      font-weight: 750;
       letter-spacing: .2px;
       text-transform: lowercase;
+      white-space: nowrap;
     }
 
     button {
@@ -64,49 +64,65 @@
       border-radius: 12px;
       background: var(--button);
       color: white;
-      padding: 9px 12px;
-      font-size: .95rem;
+      padding: 8px 11px;
+      font-size: .88rem;
       cursor: pointer;
-      font-weight: 700;
+      font-weight: 750;
       white-space: nowrap;
     }
 
-    button:active {
-      transform: translateY(1px);
-    }
+    button:active { transform: translateY(1px); }
 
-    .stats {
+    .stats-row {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 8px;
       flex: 0 0 auto;
+      align-items: stretch;
     }
 
-    .stat {
+    .stat, .modebox {
       background: var(--card2);
       border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 10px 12px;
-      min-height: 66px;
+      border-radius: 15px;
+      padding: 9px 10px;
+      min-height: 60px;
+    }
+
+    .modebox {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      min-width: 108px;
+    }
+
+    .modebox button {
+      width: 100%;
+      height: 100%;
+      background: #334155;
+      border-radius: 15px;
+      font-size: .84rem;
+      padding: 8px;
     }
 
     .label {
       color: var(--muted);
-      font-size: .78rem;
-      margin-bottom: 4px;
+      font-size: .72rem;
+      margin-bottom: 3px;
     }
 
     .value {
-      font-size: 1.35rem;
-      font-weight: 800;
-      line-height: 1.15;
+      font-size: 1.18rem;
+      font-weight: 850;
+      line-height: 1.12;
     }
 
     .card {
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 18px;
-      padding: 10px;
+      padding: 8px;
       box-shadow: 0 8px 22px rgba(0,0,0,.15);
       flex: 1 1 auto;
       min-height: 0;
@@ -116,10 +132,10 @@
 
     #status {
       color: var(--muted);
-      font-size: .82rem;
-      line-height: 1.25;
-      min-height: 18px;
-      margin: 0 0 6px;
+      font-size: .74rem;
+      line-height: 1.2;
+      min-height: 15px;
+      margin: 0 0 4px;
       flex: 0 0 auto;
     }
 
@@ -130,6 +146,8 @@
       grid-template-columns: repeat(24, 1fr);
       gap: 2px;
       align-items: stretch;
+      padding-bottom: 58px;
+      position: relative;
     }
 
     .bar-wrap {
@@ -139,7 +157,7 @@
       justify-content: flex-end;
       align-items: stretch;
       position: relative;
-      overflow: hidden;
+      overflow: visible;
     }
 
     .bar {
@@ -147,36 +165,45 @@
       border-radius: 5px 5px 0 0;
       background: var(--blue);
       position: relative;
-      display: flex;
-      align-items: flex-end;
-      justify-content: center;
-      overflow: hidden;
     }
 
-    .bar.cheap {
-      background: var(--green);
-    }
-
-    .bar.expensive {
-      background: var(--red);
-    }
+    .bar.cheap { background: var(--green); }
+    .bar.expensive { background: var(--red); }
 
     .bar.now {
-      outline: 2px solid white;
-      outline-offset: -2px;
+      background: var(--yellow);
+      box-shadow:
+        0 0 0 2px white inset,
+        0 0 14px rgba(250, 204, 21, .95);
+      z-index: 2;
+    }
+
+    .bar.now::before {
+      content: "";
+      position: absolute;
+      top: -7px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: white;
+      box-shadow: 0 0 8px white;
     }
 
     .bar-label {
-      writing-mode: vertical-rl;
-      transform: rotate(180deg);
-      color: rgba(255,255,255,.92);
-      font-size: clamp(.48rem, 1.65vw, .68rem);
+      position: absolute;
+      left: 50%;
+      bottom: 0;
+      transform: translate(-50%, 100%) rotate(-90deg);
+      transform-origin: top left;
+      color: var(--muted);
+      font-size: clamp(.48rem, 1.65vw, .66rem);
       font-weight: 750;
       line-height: 1;
-      padding: 5px 0;
       white-space: nowrap;
-      text-shadow: 0 1px 2px rgba(0,0,0,.45);
       user-select: none;
+      padding-top: 7px;
     }
 
     .empty {
@@ -187,44 +214,31 @@
       text-align: center;
       height: 100%;
       padding: 16px;
-      font-size: .95rem;
+      font-size: .92rem;
+      grid-column: 1 / -1;
+    }
+
+    @media (max-width: 390px) {
+      main { padding: 9px; gap: 8px; }
+      h1 { font-size: .98rem; }
+      button { font-size: .8rem; padding: 7px 9px; }
+      .stats-row { gap: 6px; }
+      .stat { padding: 8px; min-height: 56px; }
+      .modebox { min-width: 96px; min-height: 56px; }
+      .value { font-size: 1.02rem; }
+      .label { font-size: .68rem; }
+      #chart { padding-bottom: 54px; gap: 1px; }
+      .bar-label { font-size: .48rem; }
     }
 
     @media (max-height: 680px) {
-      main {
-        padding: 9px;
-        gap: 8px;
-      }
-
-      h1 {
-        font-size: 1.02rem;
-      }
-
-      button {
-        padding: 8px 10px;
-        font-size: .86rem;
-      }
-
-      .stat {
-        min-height: 58px;
-        padding: 8px 10px;
-      }
-
-      .value {
-        font-size: 1.18rem;
-      }
-
-      .label {
-        font-size: .72rem;
-      }
-
-      .card {
-        padding: 8px;
-      }
-
-      #status {
-        display: none;
-      }
+      main { padding: 8px; gap: 7px; }
+      h1 { font-size: .98rem; }
+      .stat, .modebox { min-height: 52px; }
+      .value { font-size: 1.02rem; }
+      #status { display: none; }
+      .card { padding: 7px; }
+      #chart { padding-bottom: 50px; }
     }
   </style>
 </head>
@@ -236,7 +250,7 @@
       <button id="switchDay">morgen</button>
     </header>
 
-    <section class="stats">
+    <section class="stats-row">
       <div class="stat">
         <div class="label">Nu</div>
         <div id="now" class="value">–</div>
@@ -245,6 +259,10 @@
       <div class="stat">
         <div class="label">Gemiddeld</div>
         <div id="avg" class="value">–</div>
+      </div>
+
+      <div class="modebox">
+        <button id="switchMode">afnemen</button>
       </div>
     </section>
 
@@ -257,11 +275,36 @@
   <script>
     const API = "https://api.energyzero.nl/v1/energyprices";
 
+    /*
+      Kosteninstellingen
+
+      API-prijs:
+      - EnergyZero-prijs wordt opgehaald inclusief btw.
+      - Daarom tellen we alleen extra bedragen op die nog niet in de kale dynamische prijs zitten.
+
+      2026:
+      - Energiebelasting elektriciteit incl. btw: €0,11085/kWh.
+      - ODE is afgeschaft/verwerkt in energiebelasting.
+      - Netbeheerkosten zijn doorgaans vaste periodieke kosten, niet variabel per kWh.
+    */
+    const BTW = 0.21;
+
+    const COSTS = {
+      energyTaxInclVat: 0.11085,
+
+      supplierMarkupUseExVat: 0.04073,
+      supplierDeductionReturnExVat: 0.0453,
+
+      variableGridCostInclVat: 0
+    };
+
     let showingTomorrow = false;
+    let mode = "use"; // use = afnemen, return = terugleveren
 
     const els = {
       title: document.querySelector("#title"),
       switchDay: document.querySelector("#switchDay"),
+      switchMode: document.querySelector("#switchMode"),
       status: document.querySelector("#status"),
       now: document.querySelector("#now"),
       avg: document.querySelector("#avg"),
@@ -270,6 +313,11 @@
 
     els.switchDay.addEventListener("click", () => {
       showingTomorrow = !showingTomorrow;
+      loadPrices();
+    });
+
+    els.switchMode.addEventListener("click", () => {
+      mode = mode === "use" ? "return" : "use";
       loadPrices();
     });
 
@@ -303,6 +351,7 @@
       document.title = "uurprijzen " + dayText;
       els.title.textContent = "uurprijzen " + dayText;
       els.switchDay.textContent = showingTomorrow ? "vandaag" : "morgen";
+      els.switchMode.textContent = mode === "use" ? "afnemen" : "terugleveren";
       els.status.textContent = "Laden...";
 
       try {
@@ -326,10 +375,15 @@
         const raw = data.Prices || data.prices || [];
 
         const prices = raw
-          .map(item => ({
-            time: new Date(item.readingDate || item.ReadingDate),
-            price: Number(item.price ?? item.Price)
-          }))
+          .map(item => {
+            const baseInclVat = Number(item.price ?? item.Price);
+
+            return {
+              time: new Date(item.readingDate || item.ReadingDate),
+              basePrice: baseInclVat,
+              price: totalPrice(baseInclVat)
+            };
+          })
           .filter(item => Number.isFinite(item.price))
           .sort((a, b) => a.time - b.time);
 
@@ -345,6 +399,23 @@
       }
     }
 
+    function totalPrice(baseInclVat) {
+      if (mode === "use") {
+        const markupInclVat = COSTS.supplierMarkupUseExVat * (1 + BTW);
+
+        return (
+          baseInclVat +
+          markupInclVat +
+          COSTS.energyTaxInclVat +
+          COSTS.variableGridCostInclVat
+        );
+      }
+
+      const deductionInclVat = COSTS.supplierDeductionReturnExVat * (1 + BTW);
+
+      return baseInclVat - deductionInclVat;
+    }
+
     function resetScreen() {
       els.now.textContent = "–";
       els.avg.textContent = "–";
@@ -352,7 +423,8 @@
     }
 
     function euro(value) {
-      return "€" + value.toFixed(2);
+      const sign = value < 0 ? "-€" : "€";
+      return sign + Math.abs(value).toFixed(2);
     }
 
     function hourNumber(date) {
@@ -390,6 +462,8 @@
         byHour.set(item.time.getHours(), item);
       });
 
+      const range = Math.max(max - min, 0.0001);
+
       for (let hour = 0; hour < 24; hour++) {
         const item = byHour.get(hour);
 
@@ -412,7 +486,7 @@
         if (item.price === max) bar.classList.add("expensive");
         if (current && item.time.getTime() === current.time.getTime()) bar.classList.add("now");
 
-        const height = 12 + ((item.price - min) / Math.max(max - min, 0.0001)) * 88;
+        const height = 9 + ((item.price - min) / range) * 91;
         bar.style.height = height + "%";
         bar.title = hourNumber(item.time) + " - " + euro(item.price);
 
@@ -420,8 +494,8 @@
         label.className = "bar-label";
         label.textContent = hourNumber(item.time) + " - " + euro(item.price);
 
-        bar.appendChild(label);
         wrap.appendChild(bar);
+        wrap.appendChild(label);
         els.chart.appendChild(wrap);
       }
     }
