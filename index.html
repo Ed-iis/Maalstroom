@@ -24,7 +24,7 @@
       --solar-label-height: 0px;
       --bar-gap: 4px;
       --grid-step: 10%;
-      --solar-grid-step: 20%;
+      --solar-grid-step: 12.5%;
     }
 
     * { box-sizing: border-box; }
@@ -42,7 +42,7 @@
       height: 100dvh;
       max-width: 900px;
       margin: 0 auto;
-      padding: 11px;
+      padding: 11px 11px calc(11px + 1cm);
       display: flex;
       flex-direction: column;
       gap: 9px;
@@ -168,6 +168,51 @@
       position: relative;
     }
 
+    .solar-plot {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      gap: 4px;
+      position: relative;
+    }
+
+    .solar-axis {
+      position: relative;
+      color: white;
+      font-size: .70rem;
+      line-height: 1;
+    }
+
+    .solar-axis span {
+      position: absolute;
+      right: 4px;
+      transform: translateY(50%);
+    }
+
+    .solar-axis .unit {
+      top: 0;
+      transform: translateY(-110%);
+      font-size: .66rem;
+      color: var(--text);
+    }
+
+    .solar-axis .y8 { bottom: 100%; }
+    .solar-axis .y7 { bottom: 87.5%; }
+    .solar-axis .y6 { bottom: 75%; }
+    .solar-axis .y5 { bottom: 62.5%; }
+    .solar-axis .y4 { bottom: 50%; }
+    .solar-axis .y3 { bottom: 37.5%; }
+    .solar-axis .y2 { bottom: 25%; }
+    .solar-axis .y1 { bottom: 12.5%; }
+    .solar-axis .y0 { bottom: 0; }
+
+    .solar-plot #solarChart {
+      flex: initial;
+      height: 100%;
+    }
+
+
     #chart::before, #solarChart::before {
       content: "";
       position: absolute;
@@ -279,7 +324,7 @@
     }
 
     @media (max-width: 390px) {
-      main { padding: 9px; gap: 8px; }
+      main { padding: 9px 9px calc(9px + 1cm); gap: 8px; }
       h1 { font-size: .98rem; }
       :root { --control-width: 104px; --control-height: 44px; --label-height: 54px; }
       button { font-size: .8rem; padding: 7px 9px; }
@@ -288,12 +333,14 @@
       .value { font-size: .9rem; }
       .label { font-size: .68rem; }
       .chart { gap: 1px; }
+      .solar-plot { grid-template-columns: 24px 1fr; gap: 3px; }
+      .solar-axis { font-size: .64rem; }
       .bar-wrap { gap: 3px; }
       .bar-label { font-size: .46rem; }
     }
 
     @media (max-height: 680px) {
-      main { padding: 8px; gap: 7px; }
+      main { padding: 8px 8px calc(8px + 1cm); gap: 7px; }
       h1 { font-size: .98rem; }
       :root { --control-height: 42px; --label-height: 46px; --bar-gap: 2px; }
       .value { font-size: .9rem; }
@@ -335,8 +382,22 @@
     </section>
 
     <section class="card">
-      <p class="chart-title">Verwachte opbrengst zonnepanelen</p>
-      <div id="solarChart" class="chart"></div>
+      <p id="solarTitle" class="chart-title">Verwachte opbrengst zonnepanelen (totaal – kWh)</p>
+      <div class="solar-plot">
+        <div class="solar-axis" aria-hidden="true">
+          <span class="unit">kWh</span>
+          <span class="y8">8</span>
+          <span class="y7">7</span>
+          <span class="y6">6</span>
+          <span class="y5">5</span>
+          <span class="y4">4</span>
+          <span class="y3">3</span>
+          <span class="y2">2</span>
+          <span class="y1">1</span>
+          <span class="y0">0</span>
+        </div>
+        <div id="solarChart" class="chart"></div>
+      </div>
     </section>
   </main>
 
@@ -376,7 +437,8 @@
       now: document.querySelector("#now"),
       avg: document.querySelector("#avg"),
       chart: document.querySelector("#chart"),
-      solarChart: document.querySelector("#solarChart")
+      solarChart: document.querySelector("#solarChart"),
+      solarTitle: document.querySelector("#solarTitle")
     };
 
     els.switchDay.addEventListener("click", () => {
@@ -627,6 +689,7 @@
       els.avg.textContent = "–";
       els.chart.innerHTML = "";
       els.solarChart.innerHTML = "";
+      if (els.solarTitle) els.solarTitle.textContent = "Verwachte opbrengst zonnepanelen (totaal – kWh)";
     }
 
     function euro(value) {
@@ -718,8 +781,11 @@
     function renderSolar(selectedSolar, allSolar) {
       els.solarChart.innerHTML = "";
 
-      const solarMax = roundedSolarMax(Math.max(...allSolar.map(item => item.kwh)));
-      document.documentElement.style.setProperty("--solar-grid-step", (0.5 / solarMax * 100) + "%");
+      const solarMax = 8;
+      document.documentElement.style.setProperty("--solar-grid-step", "12.5%");
+
+      const total = selectedSolar.reduce((sum, item) => sum + item.kwh, 0);
+      els.solarTitle.textContent = "Verwachte opbrengst zonnepanelen (totaal " + total.toFixed(1).replace(".", ",") + " kWh)";
 
       const byHour = new Map();
       selectedSolar.forEach(item => byHour.set(item.time.getHours(), item));
