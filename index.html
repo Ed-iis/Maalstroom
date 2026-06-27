@@ -18,6 +18,11 @@
       --red: #ef4444;
       --yellow: #facc15;
       --button: #2563eb;
+      --control-width: 116px;
+      --control-height: 48px;
+      --label-height: 66px;
+      --bar-gap: 4px;
+      --grid-step: 10%;
     }
 
     * { box-sizing: border-box; }
@@ -64,6 +69,8 @@
       border-radius: 12px;
       background: var(--button);
       color: white;
+      width: var(--control-width);
+      height: var(--control-height);
       padding: 8px 11px;
       font-size: .88rem;
       cursor: pointer;
@@ -75,7 +82,7 @@
 
     .stats-row {
       display: grid;
-      grid-template-columns: 1fr 1fr auto;
+      grid-template-columns: repeat(3, var(--control-width));
       gap: 8px;
       flex: 0 0 auto;
       align-items: stretch;
@@ -84,9 +91,11 @@
     .stat, .modebox {
       background: var(--card2);
       border: 1px solid var(--border);
-      border-radius: 15px;
-      padding: 9px 10px;
-      min-height: 60px;
+      border-radius: 12px;
+      width: var(--control-width);
+      height: var(--control-height);
+      padding: 6px 9px;
+      min-height: 0;
     }
 
     .modebox {
@@ -94,28 +103,27 @@
       align-items: center;
       justify-content: center;
       padding: 0;
-      min-width: 108px;
+      border: 0;
+      background: transparent;
     }
 
     .modebox button {
-      width: 100%;
-      height: 100%;
-      background: #334155;
-      border-radius: 15px;
-      font-size: .84rem;
-      padding: 8px;
+      background: var(--button);
+      border-radius: 12px;
+      font-size: .88rem;
+      padding: 8px 11px;
     }
 
     .label {
       color: var(--muted);
-      font-size: .72rem;
-      margin-bottom: 3px;
+      font-size: .66rem;
+      margin-bottom: 2px;
     }
 
     .value {
-      font-size: 1.18rem;
+      font-size: .98rem;
       font-weight: 850;
-      line-height: 1.12;
+      line-height: 1.08;
     }
 
     .card {
@@ -149,12 +157,31 @@
       position: relative;
     }
 
+    #chart::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      bottom: calc(var(--label-height) + var(--bar-gap));
+      background:
+        repeating-linear-gradient(
+          to top,
+          rgba(255,255,255,.18) 0 1px,
+          transparent 1px var(--grid-step)
+        );
+      pointer-events: none;
+      z-index: 0;
+    }
+
     .bar-wrap {
       min-width: 0;
       display: grid;
-      grid-template-rows: 1fr 66px;
-      gap: 4px;
+      grid-template-rows: 1fr var(--label-height);
+      gap: var(--bar-gap);
       overflow: hidden;
+      position: relative;
+      z-index: 1;
     }
 
     .bar-area {
@@ -197,7 +224,7 @@
     }
 
     .bar-label {
-      height: 66px;
+      height: var(--label-height);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -227,26 +254,25 @@
     @media (max-width: 390px) {
       main { padding: 9px; gap: 8px; }
       h1 { font-size: .98rem; }
+      :root { --control-width: 104px; --control-height: 44px; --label-height: 62px; }
       button { font-size: .8rem; padding: 7px 9px; }
       .stats-row { gap: 6px; }
-      .stat { padding: 8px; min-height: 56px; }
-      .modebox { min-width: 96px; min-height: 56px; }
-      .value { font-size: 1.02rem; }
+      .stat { padding: 5px 7px; }
+      .value { font-size: .9rem; }
       .label { font-size: .68rem; }
       #chart { gap: 1px; }
-      .bar-wrap { grid-template-rows: 1fr 62px; gap: 3px; }
-      .bar-label { height: 62px; font-size: .48rem; }
+      .bar-wrap { gap: 3px; }
+      .bar-label { font-size: .48rem; }
     }
 
     @media (max-height: 680px) {
       main { padding: 8px; gap: 7px; }
       h1 { font-size: .98rem; }
-      .stat, .modebox { min-height: 52px; }
-      .value { font-size: 1.02rem; }
+      :root { --control-height: 42px; --label-height: 54px; --bar-gap: 2px; }
+      .value { font-size: .9rem; }
       #status { display: none; }
       .card { padding: 7px; }
-      .bar-wrap { grid-template-rows: 1fr 54px; gap: 2px; }
-      .bar-label { height: 54px; }
+      .bar-wrap { gap: 2px; }
     }
   </style>
 </head>
@@ -284,7 +310,7 @@
     const API = "https://api.energyzero.nl/v1/energyprices";
 
     const BTW = 0.21;
-    const CHART_MAX = 1.00;
+    let chartMax = 1.00;
 
     const COSTS = {
       energyTaxInclVat: 0.11085,
@@ -340,53 +366,51 @@
     async function loadPrices() {
       resetScreen();
 
-      const date = selectedDate();
+      const selected = selectedDate();
       const dayText = showingTomorrow ? "morgen" : "vandaag";
+      const modeText = mode === "use" ? "afnemen" : "terugleveren";
 
-      document.title = "uurprijzen " + dayText;
-      els.title.textContent = "uurprijzen " + dayText;
+      document.title = "uurprijzen " + dayText + ", " + modeText;
+      els.title.textContent = "uurprijzen " + dayText + ", " + modeText;
       els.switchDay.textContent = showingTomorrow ? "vandaag" : "morgen";
-      els.switchMode.textContent = mode === "use" ? "afnemen" : "terugleveren";
+      els.switchMode.textContent = mode === "use" ? "terugleveren" : "afnemen";
       els.status.textContent = "Laden...";
 
       try {
-        const range = dayRange(date);
+        const today = new Date();
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
 
-        const params = new URLSearchParams({
-          fromDate: range.fromDate,
-          tillDate: range.tillDate,
-          interval: "4",
-          usageType: "1",
-          inclBtw: "true"
-        });
+        const [todayPrices, tomorrowPrices] = await Promise.all([
+          fetchDayPrices(today),
+          fetchDayPrices(tomorrow)
+        ]);
 
-        const response = await fetch(API + "?" + params.toString());
+        const allPrices = [...todayPrices, ...tomorrowPrices];
 
-        if (!response.ok) {
-          throw new Error("Prijzen konden niet worden opgehaald.");
-        }
-
-        const data = await response.json();
-        const raw = data.Prices || data.prices || [];
-
-        const prices = raw
-          .map(item => {
-            const baseInclVat = Number(item.price ?? item.Price);
-
-            return {
-              time: new Date(item.readingDate || item.ReadingDate),
-              basePrice: baseInclVat,
-              price: totalPrice(baseInclVat)
-            };
-          })
-          .filter(item => Number.isFinite(item.price))
-          .sort((a, b) => a.time - b.time);
-
-        if (!prices.length) {
+        if (!allPrices.length) {
           throw new Error("Nog geen prijzen beschikbaar.");
         }
 
-        render(prices);
+        const allScaleValues = allPrices.flatMap(item => [
+          totalPrice(item.basePrice, "use"),
+          totalPrice(item.basePrice, "return")
+        ]);
+
+        chartMax = roundedChartMax(Math.max(...allScaleValues));
+        document.documentElement.style.setProperty("--grid-step", (0.1 / chartMax * 100) + "%");
+
+        const selectedPrices = (showingTomorrow ? tomorrowPrices : todayPrices)
+          .map(item => ({
+            ...item,
+            price: totalPrice(item.basePrice, mode)
+          }));
+
+        if (!selectedPrices.length) {
+          throw new Error("Nog geen prijzen beschikbaar voor " + dayText + ".");
+        }
+
+        render(selectedPrices);
         els.status.textContent = "";
       } catch (error) {
         els.status.textContent = error.message;
@@ -394,8 +418,46 @@
       }
     }
 
-    function totalPrice(baseInclVat) {
-      if (mode === "use") {
+    async function fetchDayPrices(date) {
+      const range = dayRange(date);
+
+      const params = new URLSearchParams({
+        fromDate: range.fromDate,
+        tillDate: range.tillDate,
+        interval: "4",
+        usageType: "1",
+        inclBtw: "true"
+      });
+
+      const response = await fetch(API + "?" + params.toString());
+
+      if (!response.ok) {
+        throw new Error("Prijzen konden niet worden opgehaald.");
+      }
+
+      const data = await response.json();
+      const raw = data.Prices || data.prices || [];
+
+      return raw
+        .map(item => {
+          const baseInclVat = Number(item.price ?? item.Price);
+
+          return {
+            time: new Date(item.readingDate || item.ReadingDate),
+            basePrice: baseInclVat
+          };
+        })
+        .filter(item => Number.isFinite(item.basePrice))
+        .sort((a, b) => a.time - b.time);
+    }
+
+    function roundedChartMax(maxValue) {
+      const safeMax = Math.max(0.2, maxValue);
+      return Math.ceil(safeMax / 0.2) * 0.2;
+    }
+
+    function totalPrice(baseInclVat, selectedMode = mode) {
+      if (selectedMode === "use") {
         const markupInclVat = COSTS.supplierMarkupUseExVat * (1 + BTW);
 
         return (
@@ -487,8 +549,8 @@
         if (item.price === max) bar.classList.add("expensive");
         if (current && item.time.getTime() === current.time.getTime()) bar.classList.add("now");
 
-        const clampedPrice = Math.max(0, Math.min(item.price, CHART_MAX));
-        const height = Math.max(2, (clampedPrice / CHART_MAX) * 100);
+        const clampedPrice = Math.max(0, Math.min(item.price, chartMax));
+        const height = Math.max(2, (clampedPrice / chartMax) * 100);
 
         bar.style.height = height + "%";
         bar.title = hourNumber(item.time) + " - " + euro(item.price);
