@@ -82,7 +82,7 @@
 
     .stats-row {
       display: grid;
-      grid-template-columns: repeat(3, var(--control-width));
+      grid-template-columns: var(--control-width) var(--control-width) 1fr;
       gap: 8px;
       flex: 0 0 auto;
       align-items: stretch;
@@ -101,7 +101,9 @@
     .modebox {
       display: flex;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-end;
+      justify-self: stretch;
+      width: auto;
       padding: 0;
       border: 0;
       background: transparent;
