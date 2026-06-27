@@ -20,9 +20,11 @@
       --button: #2563eb;
       --control-width: 116px;
       --control-height: 48px;
-      --label-height: 66px;
+      --label-height: 58px;
+      --solar-label-height: 0px;
       --bar-gap: 4px;
       --grid-step: 10%;
+      --solar-grid-step: 20%;
     }
 
     * { box-sizing: border-box; }
@@ -82,7 +84,7 @@
 
     .stats-row {
       display: grid;
-      grid-template-columns: var(--control-width) var(--control-width) 1fr;
+      grid-template-columns: var(--control-width) var(--control-width) 1fr var(--control-width);
       gap: 8px;
       flex: 0 0 auto;
       align-items: stretch;
@@ -99,11 +101,10 @@
     }
 
     .modebox {
+      grid-column: 4;
       display: flex;
       align-items: center;
-      justify-content: flex-end;
-      justify-self: stretch;
-      width: auto;
+      justify-content: center;
       padding: 0;
       border: 0;
       background: transparent;
@@ -134,22 +135,30 @@
       border-radius: 18px;
       padding: 8px;
       box-shadow: 0 8px 22px rgba(0,0,0,.15);
-      flex: 1 1 auto;
+      flex: 1 1 0;
       min-height: 0;
       display: flex;
       flex-direction: column;
     }
 
-    #status {
-      color: var(--muted);
-      font-size: .74rem;
-      line-height: 1.2;
-      min-height: 15px;
+    .chart-title {
       margin: 0 0 4px;
+      font-size: .82rem;
+      line-height: 1.2;
+      font-weight: 800;
       flex: 0 0 auto;
     }
 
-    #chart {
+    #status {
+      color: var(--muted);
+      font-size: .70rem;
+      line-height: 1.2;
+      min-height: 13px;
+      margin: 0 0 3px;
+      flex: 0 0 auto;
+    }
+
+    .chart {
       flex: 1 1 auto;
       min-height: 0;
       display: grid;
@@ -159,7 +168,7 @@
       position: relative;
     }
 
-    #chart::before {
+    #chart::before, #solarChart::before {
       content: "";
       position: absolute;
       left: 0;
@@ -169,11 +178,21 @@
       background:
         repeating-linear-gradient(
           to top,
-          rgba(255,255,255,.18) 0 1px,
+          rgba(255,255,255,.16) 0 1px,
           transparent 1px var(--grid-step)
         );
       pointer-events: none;
       z-index: 0;
+    }
+
+    #solarChart::before {
+      bottom: 0;
+      background:
+        repeating-linear-gradient(
+          to top,
+          rgba(255,255,255,.16) 0 1px,
+          transparent 1px var(--solar-grid-step)
+        );
     }
 
     .bar-wrap {
@@ -184,6 +203,11 @@
       overflow: hidden;
       position: relative;
       z-index: 1;
+    }
+
+    .solar-wrap {
+      grid-template-rows: 1fr;
+      gap: 0;
     }
 
     .bar-area {
@@ -205,6 +229,7 @@
 
     .bar.cheap { background: var(--green); }
     .bar.expensive { background: var(--red); }
+    .bar.solar { background: var(--yellow); box-shadow: 0 0 10px rgba(250, 204, 21, .25); }
 
     .bar.now {
       background: var(--yellow);
@@ -231,7 +256,7 @@
       align-items: center;
       justify-content: center;
       color: white;
-      font-size: clamp(.48rem, 1.55vw, .64rem);
+      font-size: clamp(.46rem, 1.45vw, .60rem);
       font-weight: 750;
       line-height: 1;
       white-space: nowrap;
@@ -256,25 +281,26 @@
     @media (max-width: 390px) {
       main { padding: 9px; gap: 8px; }
       h1 { font-size: .98rem; }
-      :root { --control-width: 104px; --control-height: 44px; --label-height: 62px; }
+      :root { --control-width: 104px; --control-height: 44px; --label-height: 54px; }
       button { font-size: .8rem; padding: 7px 9px; }
       .stats-row { gap: 6px; }
       .stat { padding: 5px 7px; }
       .value { font-size: .9rem; }
       .label { font-size: .68rem; }
-      #chart { gap: 1px; }
+      .chart { gap: 1px; }
       .bar-wrap { gap: 3px; }
-      .bar-label { font-size: .48rem; }
+      .bar-label { font-size: .46rem; }
     }
 
     @media (max-height: 680px) {
       main { padding: 8px; gap: 7px; }
       h1 { font-size: .98rem; }
-      :root { --control-height: 42px; --label-height: 54px; --bar-gap: 2px; }
+      :root { --control-height: 42px; --label-height: 46px; --bar-gap: 2px; }
       .value { font-size: .9rem; }
       #status { display: none; }
       .card { padding: 7px; }
       .bar-wrap { gap: 2px; }
+      .chart-title { font-size: .76rem; margin-bottom: 2px; }
     }
   </style>
 </head>
@@ -303,13 +329,20 @@
     </section>
 
     <section class="card">
+      <p class="chart-title">Stroomprijs (€ / kWh)</p>
       <p id="status">Laden...</p>
-      <div id="chart"></div>
+      <div id="chart" class="chart"></div>
+    </section>
+
+    <section class="card">
+      <p class="chart-title">Verwachte opbrengst zonnepanelen</p>
+      <div id="solarChart" class="chart"></div>
     </section>
   </main>
 
   <script>
     const API = "https://api.energyzero.nl/v1/energyprices";
+    const WEATHER_API = "https://api.open-meteo.com/v1/forecast";
 
     const BTW = 0.21;
     let chartMax = 1.00;
@@ -321,8 +354,19 @@
       variableGridCostInclVat: 0
     };
 
+    const SOLAR = {
+      kwp: 3 * 2700 / 1000,
+      azimuthDeg: 210,
+      tiltDeg: 20,
+      performanceRatio: 0.82,
+      orientationFactor: 0.94,
+      fallbackLatitude: 52.37,
+      fallbackLongitude: 4.90
+    };
+
     let showingTomorrow = false;
     let mode = "use";
+    let userLocationPromise = null;
 
     const els = {
       title: document.querySelector("#title"),
@@ -331,7 +375,8 @@
       status: document.querySelector("#status"),
       now: document.querySelector("#now"),
       avg: document.querySelector("#avg"),
-      chart: document.querySelector("#chart")
+      chart: document.querySelector("#chart"),
+      solarChart: document.querySelector("#solarChart")
     };
 
     els.switchDay.addEventListener("click", () => {
@@ -352,6 +397,13 @@
       return date;
     }
 
+    function localDateString(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
     function dayRange(date) {
       const start = new Date(date);
       start.setHours(0, 0, 0, 0);
@@ -368,7 +420,6 @@
     async function loadPrices() {
       resetScreen();
 
-      const selected = selectedDate();
       const dayText = showingTomorrow ? "morgen" : "vandaag";
       const modeText = mode === "use" ? "afnemen" : "terugleveren";
 
@@ -383,9 +434,11 @@
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
 
-        const [todayPrices, tomorrowPrices] = await Promise.all([
+        const [todayPrices, tomorrowPrices, todaySolar, tomorrowSolar] = await Promise.all([
           fetchDayPrices(today),
-          fetchDayPrices(tomorrow)
+          fetchDayPrices(tomorrow),
+          fetchSolarForecast(today),
+          fetchSolarForecast(tomorrow)
         ]);
 
         const allPrices = [...todayPrices, ...tomorrowPrices];
@@ -413,10 +466,12 @@
         }
 
         render(selectedPrices);
+        renderSolar(showingTomorrow ? tomorrowSolar : todaySolar, [...todaySolar, ...tomorrowSolar]);
         els.status.textContent = "";
       } catch (error) {
         els.status.textContent = error.message;
         els.chart.innerHTML = '<div class="empty">' + error.message + '</div>';
+        renderSolarFallback();
       }
     }
 
@@ -453,9 +508,102 @@
         .sort((a, b) => a.time - b.time);
     }
 
+    async function getLocation() {
+      if (userLocationPromise) return userLocationPromise;
+
+      userLocationPromise = new Promise(resolve => {
+        if (!navigator.geolocation) {
+          resolve({ latitude: SOLAR.fallbackLatitude, longitude: SOLAR.fallbackLongitude });
+          return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+          position => resolve({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          }),
+          () => resolve({ latitude: SOLAR.fallbackLatitude, longitude: SOLAR.fallbackLongitude }),
+          { enableHighAccuracy: false, timeout: 4000, maximumAge: 60 * 60 * 1000 }
+        );
+      });
+
+      return userLocationPromise;
+    }
+
+    async function fetchSolarForecast(date) {
+      const location = await getLocation();
+      const day = localDateString(date);
+
+      const params = new URLSearchParams({
+        latitude: location.latitude,
+        longitude: location.longitude,
+        hourly: "shortwave_radiation,uv_index",
+        timezone: "auto",
+        start_date: day,
+        end_date: day
+      });
+
+      const response = await fetch(WEATHER_API + "?" + params.toString());
+      if (!response.ok) return solarFallbackForDate(date);
+
+      const data = await response.json();
+      const times = data.hourly?.time || [];
+      const radiation = data.hourly?.shortwave_radiation || [];
+      const uv = data.hourly?.uv_index || [];
+
+      const result = times.map((time, index) => {
+        const rad = Math.max(0, Number(radiation[index] || 0));
+        const uvIndex = Math.max(0, Number(uv[index] || 0));
+        const radiationYield = (rad / 1000) * SOLAR.kwp * SOLAR.performanceRatio * SOLAR.orientationFactor;
+        const uvBoost = uvIndex > 0 ? Math.min(1.12, 0.88 + uvIndex / 40) : 0;
+
+        return {
+          time: new Date(time),
+          kwh: Math.max(0, radiationYield * (uvBoost || 1))
+        };
+      });
+
+      return normalizeSolarHours(result, date);
+    }
+
+    function normalizeSolarHours(items, date) {
+      const byHour = new Map(items.map(item => [item.time.getHours(), item]));
+      const result = [];
+
+      for (let hour = 0; hour < 24; hour++) {
+        const time = new Date(date);
+        time.setHours(hour, 0, 0, 0);
+        result.push(byHour.get(hour) || { time, kwh: 0 });
+      }
+
+      return result;
+    }
+
+    function solarFallbackForDate(date) {
+      const month = date.getMonth();
+      const dayFactor = month >= 4 && month <= 7 ? 1 : month >= 2 && month <= 9 ? 0.72 : 0.35;
+      const peak = 2.7 * dayFactor;
+      const result = [];
+
+      for (let hour = 0; hour < 24; hour++) {
+        const time = new Date(date);
+        time.setHours(hour, 0, 0, 0);
+        const x = (hour - 12.6) / 5.2;
+        const curve = Math.max(0, 1 - x * x);
+        result.push({ time, kwh: peak * curve });
+      }
+
+      return result;
+    }
+
     function roundedChartMax(maxValue) {
       const safeMax = Math.max(0.2, maxValue);
       return Math.ceil(safeMax / 0.2) * 0.2;
+    }
+
+    function roundedSolarMax(maxValue) {
+      const safeMax = Math.max(0.5, maxValue);
+      return Math.ceil(safeMax / 0.5) * 0.5;
     }
 
     function totalPrice(baseInclVat, selectedMode = mode) {
@@ -478,6 +626,7 @@
       els.now.textContent = "–";
       els.avg.textContent = "–";
       els.chart.innerHTML = "";
+      els.solarChart.innerHTML = "";
     }
 
     function euro(value) {
@@ -564,6 +713,45 @@
         wrap.appendChild(label);
         els.chart.appendChild(wrap);
       }
+    }
+
+    function renderSolar(selectedSolar, allSolar) {
+      els.solarChart.innerHTML = "";
+
+      const solarMax = roundedSolarMax(Math.max(...allSolar.map(item => item.kwh)));
+      document.documentElement.style.setProperty("--solar-grid-step", (0.5 / solarMax * 100) + "%");
+
+      const byHour = new Map();
+      selectedSolar.forEach(item => byHour.set(item.time.getHours(), item));
+
+      for (let hour = 0; hour < 24; hour++) {
+        const item = byHour.get(hour) || { kwh: 0, time: new Date() };
+
+        const wrap = document.createElement("div");
+        wrap.className = "bar-wrap solar-wrap";
+
+        const barArea = document.createElement("div");
+        barArea.className = "bar-area";
+
+        const bar = document.createElement("div");
+        bar.className = "bar solar";
+
+        const height = Math.max(2, (Math.max(0, Math.min(item.kwh, solarMax)) / solarMax) * 100);
+        bar.style.height = height + "%";
+        bar.title = String(hour).padStart(2, "0") + ":00 - " + item.kwh.toFixed(2) + " kWh";
+
+        barArea.appendChild(bar);
+        wrap.appendChild(barArea);
+        els.solarChart.appendChild(wrap);
+      }
+    }
+
+    function renderSolarFallback() {
+      const today = new Date();
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const selected = showingTomorrow ? solarFallbackForDate(tomorrow) : solarFallbackForDate(today);
+      renderSolar(selected, [...solarFallbackForDate(today), ...solarFallbackForDate(tomorrow)]);
     }
   </script>
 </body>
